@@ -1,4 +1,28 @@
-# React + Vite
+# Java Full Stack Journey
+
+This repository contains a learning journey in Java full-stack development, along with a React and Vite frontend project.
+
+## Technologies
+
+- Java
+- JDBC
+- SQL
+- Spring Boot (learning)
+- HTML, CSS, and JavaScript
+- React and Vite
+
+## Contents
+
+- Core Java programs
+- JDBC examples
+- Mini projects
+- React frontend application
+
+## Goal
+
+To become a skilled Java full-stack developer by building real-world applications.
+
+## React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
