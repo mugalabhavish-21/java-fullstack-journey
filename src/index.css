@@ -52,6 +52,121 @@
 
 body {
   margin: 0;
+  background: #101114;
+}
+
+.storefront {
+  background: radial-gradient(circle at 85% 0%, #302617 0, #101114 32rem);
+  color: #f4f0e8;
+}
+
+.luxury-nav {
+  background: rgba(10, 11, 13, 0.94) !important;
+  border-color: #3b3935 !important;
+}
+
+.luxury-nav .navbar-brand {
+  color: #e8b84b !important;
+  letter-spacing: 0.16em;
+}
+
+.luxury-nav .navbar-brand:hover {
+  color: #f3cf78 !important;
+}
+
+.storefront-header {
+  border-bottom: 1px solid #3b3935;
+}
+
+.storefront-header h1,
+.storefront h2,
+.storefront h3 {
+  color: #f4f0e8;
+}
+
+.storefront-header h1 {
+  font-family: Georgia, serif;
+  letter-spacing: -0.04em;
+}
+
+.storefront-header .lead {
+  max-width: 34rem;
+}
+
+.product-card {
+  background: rgba(31, 30, 28, 0.88);
+  border: 1px solid #454039 !important;
+  border-radius: 0.35rem;
+  transition: border-color 180ms ease, transform 180ms ease;
+}
+
+.product-card:hover {
+  border-color: #e8b84b !important;
+  transform: translateY(-3px);
+}
+
+.price-badge {
+  background: rgba(232, 184, 75, 0.14) !important;
+  border: 1px solid rgba(232, 184, 75, 0.45);
+  color: #f0c65f !important;
+}
+
+.product-card .btn-warning,
+.cart-card .btn-warning {
+  background: #e8b84b;
+  border-color: #e8b84b;
+  color: #151310;
+}
+
+.product-card .btn-warning:hover,
+.cart-card .btn-warning:hover {
+  background: #f3cf78;
+  border-color: #f3cf78;
+  color: #151310;
+}
+
+.cart-card {
+  position: sticky;
+  top: 1rem;
+  background: #111214;
+  border-color: #4a4438 !important;
+  border-radius: 0.35rem;
+}
+
+.cart-card .list-group-item,
+.cart-card .border-secondary {
+  border-color: #393a3f !important;
+}
+
+.cart-card .text-light-emphasis,
+.cart-card .text-secondary {
+  color: #aaa7a0 !important;
+}
+
+.cart-card .badge.bg-warning,
+.luxury-nav .badge.bg-warning {
+  background: #e8b84b !important;
+  color: #151310 !important;
+}
+
+.cart-card .btn-outline-light {
+  border-color: #68635a;
+  color: #f4f0e8;
+}
+
+.cart-card .btn-outline-light:hover {
+  background: #e8b84b;
+  border-color: #e8b84b;
+  color: #151310;
+}
+
+.cart-card .btn-outline-light:disabled,
+.cart-card .btn-warning:disabled {
+  opacity: 0.4;
+}
+
+.cart-card .btn-outline-light.w-100 {
+  border-color: #68635a;
 }
 
 #root {

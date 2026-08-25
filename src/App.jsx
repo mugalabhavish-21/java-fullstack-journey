@@ -1,103 +1,48 @@
-import { useEffect, useState } from "react";
-import ContactForm from "./ContactForm.jsx";
-
-const API_URL = "http://localhost:5000/api/users";
-
+import { Greeting } from "./Greet.jsx";
+import { CardWrapper } from "./CardWrapper.jsx";
+import { NameList } from "./NameList.jsx";
+import { CustomButton } from "./CustomButton.jsx";
+import { Contact } from "./Contact.jsx";
+import { FeedBack } from "./FeedBack.jsx"; 
+import { Menu } from "./Menu.jsx";// Fixed casing match
+import {Counter} from "./Counter.jsx";
+import { LoginButton } from "./LoginButton.jsx"; // Added import for Counter component
+import{UserProfile} from "./UserProfile.jsx"; 
+import { TodoList } from "./TodoList.jsx";
+import { CounterWithReducer } from "./CounterwitihReducer.jsx";// Added import for UserProfile component
+import { Shooppingcaart } from "./Shooppingcaart.jsx";
 function App() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [users, setUsers] = useState([]);
-  const [message, setMessage] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-
-  async function loadUsers() {
-    try {
-      const response = await fetch(API_URL);
-      const data = await response.json();
-      setUsers(data);
-    } catch {
-      setMessage("Could not load users from the backend.");
-    }
-  }
-
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-    setMessage("");
-    setIsSaving(true);
-
-    try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, email }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setMessage(data.message || "Could not save user.");
-        return;
-      }
-
-      setName("");
-      setEmail("");
-      setMessage("User saved successfully!");
-      await loadUsers();
-    } catch {
-      setMessage("Could not connect to the backend.");
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
   return (
-    <main>
-      <h1>User Form</h1>
+    <div>
+      <Shooppingcaart />
+      <Contact />
+      <Menu />
+      <FeedBack />
+      <TodoList />
+      <NameList />
+      <CounterWithReducer />
+      <Counter />
+      <LoginButton />
+      <UserProfile />
+      <CustomButton text="like" />
+      <CustomButton text="Bookmark" />
 
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Enter name"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          required
-        />
+      <Greeting
+        name="Alice"
+        message="Have a great day!"
+      />
 
-        <input
-          type="email"
-          placeholder="Enter email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
-        />
+      <Greeting
+        name="Bob"
+        message="Hope you're doing well!"
+      />
 
-        <button type="submit" disabled={isSaving}>
-          {isSaving ? "Saving..." : "Save User"}
-        </button>
-      </form>
-
-      {message && <p>{message}</p>}
-
-      <h2>Saved Users</h2>
-
-      {users.length === 0 ? (
-        <p>No users saved yet.</p>
-      ) : (
-        users.map((user) => (
-          <p key={user.id}>
-            {user.name} — {user.email}
-          </p>
-        ))
-      )}
-
-      <ContactForm />
-    </main>
+      <CardWrapper name="Card 1">
+        <p>Bhavish</p>
+        <p>Bhavish@example.com</p>
+        <input type="text" placeholder="Enter your city" />
+      </CardWrapper>
+    </div>
   );
 }
 
