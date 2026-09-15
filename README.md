@@ -46,3 +46,11 @@ mvn spring-boot:run
 ```
 
 **Author:** Bhavish Mugala
+
+## JavaScript Tic Tac Toe
+
+A browser-based Tic Tac Toe game built with HTML, CSS, and vanilla JavaScript. The complete project is in [`javascript-project`](javascript-project).
+
+### Run locally
+
+Open [`javascript-project/index.html`](javascript-project/index.html) in a web browser. No build tools or dependencies are required.
