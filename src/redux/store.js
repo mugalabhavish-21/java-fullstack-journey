@@ -1,13 +1,8 @@
-import { applyMiddleware, combineReducers, createStore } from 'redux'
-import { thunk } from 'redux-thunk'
-import cakeReducer from './cake/cakeReducer'
-import iceCreamReducer from './iceCream/iceCreamReducer'
+import { configureStore } from '@reduxjs/toolkit'
+import employeesReducer from './employeeSlice'
 
-const rootReducer = combineReducers({
-  cake: cakeReducer,
-  iceCream: iceCreamReducer,
+export const store = configureStore({
+  reducer: {
+    employees: employeesReducer,
+  },
 })
-
-const store = createStore(rootReducer, applyMiddleware(thunk))
-
-export default store
