@@ -1,0 +1,5 @@
+export const BUY_CAKE = 'BUY_CAKE'
+export const BUY_CAKE_REQUEST = 'BUY_CAKE_REQUEST'
+export const BUY_CAKE_SUCCESS = 'BUY_CAKE_SUCCESS'
+export const BUY_CAKE_FAILURE = 'BUY_CAKE_FAILURE'
+export const RESTOCK_CAKES = 'RESTOCK_CAKES'

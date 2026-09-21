@@ -54,3 +54,14 @@ A browser-based Tic Tac Toe game built with HTML, CSS, and vanilla JavaScript. T
 ### Run locally
 
 Open [`javascript-project/index.html`](javascript-project/index.html) in a web browser. No build tools or dependencies are required.
+
+## React Redux Demo
+
+The repository also includes a React Redux cake and ice cream inventory demo. Its Redux store and feature modules are in [`src/redux`](src/redux), with reusable UI components in [`src/Components`](src/Components).
+
+Run the Vite application with:
+
+```bash
+npm install
+npm run dev
+```
