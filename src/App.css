@@ -1,0 +1,147 @@
+.app-shell {
+  min-height: 100vh;
+  padding: 48px 24px;
+  background: linear-gradient(135deg, #fffaf3 0%, #ffe4ec 100%);
+  color: #2f1b12;
+}
+
+.topbar {
+  max-width: 980px;
+  margin: 0 auto 32px;
+  text-align: center;
+}
+
+.brand-tag {
+  margin: 0;
+  color: #b8577a;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.topbar h1 {
+  margin: 12px 0 0;
+  font-size: clamp(2.2rem, 4vw, 3.8rem);
+  color: #3e1d15;
+}
+
+.shop-grid {
+  max-width: 980px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+.cake-card,
+.inventory-panel,
+.icecream-card,
+.summary-panel {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(115, 63, 81, 0.12);
+  border-radius: 24px;
+  box-shadow: 0 20px 45px rgba(84, 31, 37, 0.12);
+  padding: 32px 24px;
+  backdrop-filter: blur(6px);
+}
+
+.eyebrow {
+  margin: 0 0 14px;
+  color: #a65d7a;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.cake-card h2,
+.icecream-card h2,
+.summary-panel h2,
+.inventory-panel h3 {
+  margin: 0 0 18px;
+  color: #331d19;
+}
+
+.buy-button,
+.restock-button {
+  width: 100%;
+  border: none;
+  border-radius: 14px;
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.buy-button {
+  background: linear-gradient(135deg, #ff8ebc 0%, #f76c6c 100%);
+  box-shadow: 0 12px 24px rgba(230, 85, 120, 0.25);
+}
+
+.restock-button {
+  margin-top: 18px;
+  background: linear-gradient(135deg, #79b8ff 0%, #5874f7 100%);
+  box-shadow: 0 12px 24px rgba(88, 116, 247, 0.25);
+}
+
+.buy-button:hover:not(:disabled),
+.restock-button:hover {
+  transform: translateY(-1px);
+}
+
+.buy-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.inventory-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.inventory-panel .label {
+  margin: 0 0 12px;
+  color: #8a5463;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.inventory-row,
+.summary-metrics {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.inventory-row h3,
+.summary-metrics strong {
+  font-size: 2.4rem;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.inventory-row span,
+.summary-metrics span {
+  color: #6b4a52;
+  font-weight: 600;
+}
+
+.summary-metrics {
+  margin-top: 18px;
+}
+
+.summary-metrics div {
+  flex: 1;
+}
+
+.error-message {
+  margin-top: 14px;
+  color: #b42318;
+  font-size: 0.9rem;
+}
