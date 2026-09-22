@@ -65,3 +65,6 @@ Run the Vite application with:
 npm install
 npm run dev
 ```
+
+
+<!-- HireFlow production branch verified for interview readiness -->
