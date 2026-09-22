@@ -1,24 +1,208 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { addEmployee, deleteEmployee, setEmployees, updateEmployee } from './store/employeesSlice';
+import { useEffect, useMemo, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import {
+  addEmployee,
+  deleteEmployee,
+  fetchEmployees,
+  updateEmployee,
+} from './redux/employeeSlice'
+import './App.css'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const initialForm={name:'',email:'',role:'Developer',department:'Engineering',status:'Active'};
+const emptyForm = { name: '', email: '', department: 'IT', salary: '' }
 
-export default function App(){
- const dispatch=useDispatch(), employees=useSelector(s=>s.employees.items);
- const [search,setSearch]=useState(''),[department,setDepartment]=useState('All'),[editing,setEditing]=useState(null),[form,setForm]=useState(initialForm),[apiStatus,setApiStatus]=useState('Checking API…');
- useEffect(()=>{fetch(API+'/employees').then(r=>{if(!r.ok)throw Error();return r.json()}).then(d=>{dispatch(setEmployees(d));setApiStatus('API connected')}).catch(()=>setApiStatus('Demo mode'))},[dispatch]);
- const departments=useMemo(()=>['All',...new Set(employees.map(e=>e.department))],[employees]);
- const filtered=employees.filter(e=>(department==='All'||e.department===department)&&(e.name+' '+e.email+' '+e.role).toLowerCase().includes(search.toLowerCase()));
- const reset=()=>{setForm(initialForm);setEditing(null)};
- const save=async e=>{e.preventDefault();if(!form.name||!form.email)return;if(editing){dispatch(updateEmployee({id:editing,...form}));try{await fetch(API+'/employees/'+editing,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(form)})}catch{}}else{const x={id:Date.now(),...form};dispatch(addEmployee(x));try{await fetch(API+'/employees',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(form)})}catch{}}reset()};
- const remove=async id=>{dispatch(deleteEmployee(id));try{await fetch(API+'/employees/'+id,{method:'DELETE'})}catch{}};
- const stats=[['Total',employees.length],['Active',employees.filter(e=>e.status==='Active').length],['Engineering',employees.filter(e=>e.department==='Engineering').length],['Managers',employees.filter(e=>e.role==='Manager').length]];
- return <div className="app"><header><div className="brand"><div className="logo">HM</div><div><b>ManageHub</b><small>Redux Toolkit Full Stack</small></div></div><div className="api">{apiStatus}</div></header><main>
- <section className="hero"><div><span className="eyebrow">Helical Insight assignment</span><h1>Employee <span>Management</span></h1><p>Full-stack management dashboard demonstrating React, Redux Toolkit, REST APIs and responsive UI architecture.</p></div><div className="stats">{stats.map(([l,v])=><div key={l}><strong>{v}</strong><small>{l}</small></div>)}</div></section>
- <section className="toolbar"><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search employees, email or role…"/><select value={department} onChange={e=>setDepartment(e.target.value)}>{departments.map(d=><option key={d}>{d}</option>)}</select><button onClick={()=>{reset();document.getElementById('name')?.focus()}}>+ Add employee</button></section>
- <div className="layout"><section className="card table-card"><div className="card-head"><div><h2>Team directory</h2><p>{filtered.length} employees</p></div><span className="pill">Redux state</span></div><div className="table-wrap"><table><thead><tr><th>Employee</th><th>Role</th><th>Department</th><th>Status</th><th></th></tr></thead><tbody>{filtered.map(e=><tr key={e.id}><td><div className="person"><div className="avatar">{e.name.split(' ').map(x=>x[0]).join('').slice(0,2)}</div><div><b>{e.name}</b><small>{e.email}</small></div></div></td><td>{e.role}</td><td>{e.department}</td><td><span className={e.status==='Active'?'active':'inactive'}>{e.status}</span></td><td className="row-actions"><button onClick={()=>{setEditing(e.id);setForm({...e})}}>Edit</button><button onClick={()=>remove(e.id)}>Delete</button></td></tr>)}</tbody></table></div></section>
- <form className="card form" onSubmit={save}><div className="card-head"><div><h2>{editing?'Edit employee':'Add employee'}</h2><p>CRUD with Redux Toolkit</p></div></div>{[['name','Name','e.g. Ananya Rao'],['email','Email','name@company.com']].map(([k,l,p])=><label key={k}>{l}<input id={k} type={k==='email'?'email':'text'} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})} placeholder={p}/></label>)}<label>Role<select value={form.role} onChange={e=>setForm({...form,role:e.target.value})}><option>Developer</option><option>Manager</option><option>Designer</option><option>QA Engineer</option><option>HR</option></select></label><label>Department<select value={form.department} onChange={e=>setForm({...form,department:e.target.value})}><option>Engineering</option><option>Product</option><option>Design</option><option>Human Resources</option><option>Finance</option></select></label><label>Status<select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option>Active</option><option>Inactive</option></select></label><div className="form-actions"><button type="submit">{editing?'Update employee':'Create employee'}</button>{editing&&<button type="button" className="ghost" onClick={reset}>Cancel</button>}</div></form></div>
- <section className="tech"><b>Stack</b><span>React 19</span><span>Redux Toolkit</span><span>React Redux</span><span>Express REST API</span><span>Vite</span></section></main></div>
+function App() {
+  const dispatch = useDispatch()
+  const { items, status, error } = useSelector((state) => state.employees)
+  const [form, setForm] = useState(emptyForm)
+  const [editingId, setEditingId] = useState(null)
+  const [search, setSearch] = useState('')
+  const [department, setDepartment] = useState('All')
+
+  useEffect(() => {
+    dispatch(fetchEmployees())
+  }, [dispatch])
+
+  const departments = useMemo(
+    () => ['All', ...new Set(items.map((employee) => employee.department))],
+    [items],
+  )
+
+  const filteredEmployees = useMemo(() => {
+    const query = search.toLowerCase().trim()
+    return items.filter((employee) => {
+      const matchesSearch =
+        !query ||
+        employee.name.toLowerCase().includes(query) ||
+        employee.email.toLowerCase().includes(query)
+      const matchesDepartment =
+        department === 'All' || employee.department === department
+      return matchesSearch && matchesDepartment
+    })
+  }, [items, search, department])
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    if (!form.name || !form.email || !form.salary) return
+
+    if (editingId) {
+      await dispatch(updateEmployee({ id: editingId, employee: form }))
+    } else {
+      await dispatch(addEmployee(form))
+    }
+
+    setForm(emptyForm)
+    setEditingId(null)
+  }
+
+  const handleEdit = (employee) => {
+    setEditingId(employee.id)
+    setForm({
+      name: employee.name,
+      email: employee.email,
+      department: employee.department,
+      salary: employee.salary,
+    })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleDelete = async (id) => {
+    await dispatch(deleteEmployee(id))
+  }
+
+  return (
+    <div className="app-shell">
+      <header className="hero">
+        <div>
+          <span className="badge">Redux Toolkit • Full Stack</span>
+          <h1>ManageHub</h1>
+          <p>Employee Management System</p>
+        </div>
+        <div className="hero-stat">
+          <strong>{items.length}</strong>
+          <span>Employees</span>
+        </div>
+      </header>
+
+      <main className="dashboard">
+        <section className="card form-card">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">{editingId ? 'Edit employee' : 'New employee'}</span>
+              <h2>{editingId ? 'Update employee' : 'Add employee'}</h2>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="employee-form">
+            <input
+              placeholder="Full name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              required
+            />
+            <input
+              type="email"
+              placeholder="Email address"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              required
+            />
+            <select
+              value={form.department}
+              onChange={(e) => setForm({ ...form, department: e.target.value })}
+            >
+              <option>IT</option>
+              <option>HR</option>
+              <option>Finance</option>
+              <option>Sales</option>
+              <option>Marketing</option>
+            </select>
+            <input
+              type="number"
+              min="0"
+              placeholder="Salary"
+              value={form.salary}
+              onChange={(e) => setForm({ ...form, salary: e.target.value })}
+              required
+            />
+            <div className="form-actions">
+              <button className="primary-btn" type="submit">
+                {editingId ? 'Update Employee' : 'Add Employee'}
+              </button>
+              {editingId && (
+                <button
+                  className="secondary-btn"
+                  type="button"
+                  onClick={() => {
+                    setEditingId(null)
+                    setForm(emptyForm)
+                  }}
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          </form>
+        </section>
+
+        <section className="card table-card">
+          <div className="toolbar">
+            <div>
+              <span className="eyebrow">Employee directory</span>
+              <h2>Manage employees</h2>
+            </div>
+            <div className="filters">
+              <input
+                placeholder="Search name or email..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <select value={department} onChange={(e) => setDepartment(e.target.value)}>
+                {departments.map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {status === 'loading' && <p className="state-message">Loading employees...</p>}
+          {error && <p className="error-message">{error}</p>}
+
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Department</th>
+                  <th>Salary</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredEmployees.map((employee) => (
+                  <tr key={employee.id}>
+                    <td><strong>{employee.name}</strong></td>
+                    <td>{employee.email}</td>
+                    <td><span className="department-pill">{employee.department}</span></td>
+                    <td>₹{Number(employee.salary).toLocaleString('en-IN')}</td>
+                    <td>
+                      <div className="row-actions">
+                        <button className="edit-btn" onClick={() => handleEdit(employee)}>Edit</button>
+                        <button className="delete-btn" onClick={() => handleDelete(employee.id)}>Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {status !== 'loading' && filteredEmployees.length === 0 && (
+              <p className="state-message">No employees found.</p>
+            )}
+          </div>
+        </section>
+      </main>
+    </div>
+  )
 }
+
+export default App
