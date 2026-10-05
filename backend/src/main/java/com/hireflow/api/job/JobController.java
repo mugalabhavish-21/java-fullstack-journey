@@ -10,7 +10,11 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/jobs")
-@CrossOrigin(origins = {"http://localhost:5173", "https://hireflow-react-interview.vercel.app"})
+@CrossOrigin(origins = {
+        "http://localhost:5173",
+        "https://hireflow-react-interview.vercel.app",
+        "https://hireflow-react-interview-gzdxj6o6z-mugalabhavish-5127s-projects.vercel.app"
+})
 public class JobController {
     private final JobService service;
 
