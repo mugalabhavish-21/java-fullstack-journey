@@ -1,9 +1,8 @@
 package com.hireflow.api.profile;
-import com.hireflow.api.user.*; import org.springframework.web.bind.annotation.*; import java.util.Map;
-@RestController @RequestMapping("/api/profile") public class ProfileController {
+import com.hireflow.api.user.*; import org.springframework.security.access.prepost.PreAuthorize; import org.springframework.security.core.Authentication; import org.springframework.web.bind.annotation.*;
+@RestController @RequestMapping("/api/profile") @CrossOrigin(origins={"http://localhost:5173","https://hireflow-react-interview.vercel.app"})
+public class ProfileController {
  private final AppUserRepository users; public ProfileController(AppUserRepository u){users=u;}
- private AppUser me(String email){return users.findByEmailIgnoreCase(email).orElseThrow();}
- @GetMapping public Map<String,Object> get(@RequestHeader("X-User-Email") String email){AppUser u=me(email);return Map.of("name",u.getName(),"email",u.getEmail(),"role",u.getRole(),"phone",n(u.getPhone()),"skills",n(u.getSkills()),"education",n(u.getEducation()),"experience",n(u.getExperience()),"resumeUrl",n(u.getResumeUrl()));}
- @PutMapping public Map<String,Object> update(@RequestHeader("X-User-Email") String email,@RequestBody Map<String,String> b){AppUser u=me(email);u.setName(b.getOrDefault("name",u.getName()));u.setPhone(b.getOrDefault("phone",u.getPhone()));u.setSkills(b.getOrDefault("skills",u.getSkills()));u.setEducation(b.getOrDefault("education",u.getEducation()));u.setExperience(b.getOrDefault("experience",u.getExperience()));u.setResumeUrl(b.getOrDefault("resumeUrl",u.getResumeUrl()));users.save(u);return get(email);}
- private String n(String s){return s==null?"":s;}
+ @GetMapping @PreAuthorize("hasRole('APPLICANT')") public AppUser me(Authentication a){return users.findByEmailIgnoreCase(a.getName()).orElseThrow();}
+ @PutMapping @PreAuthorize("hasRole('APPLICANT')") public AppUser update(Authentication a,@RequestBody AppUser x){var u=users.findByEmailIgnoreCase(a.getName()).orElseThrow();u.setName(x.getName());u.setPhone(x.getPhone());u.setSkills(x.getSkills());u.setEducation(x.getEducation());u.setExperience(x.getExperience());u.setResumeUrl(x.getResumeUrl());return users.save(u);}
 }
