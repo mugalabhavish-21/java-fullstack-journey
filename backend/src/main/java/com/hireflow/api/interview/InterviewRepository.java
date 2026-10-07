@@ -1,0 +1,1 @@
+package com.hireflow.api.interview; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*; public interface InterviewRepository extends JpaRepository<Interview,Long>{List<Interview> findByCandidateEmailOrderByScheduledAtDesc(String email);}
