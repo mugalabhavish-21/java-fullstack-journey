@@ -1,11 +1,11 @@
 package com.hireflow.api.job;
 
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -19,10 +19,20 @@ public class JobController {
     }
 
     @GetMapping
-    public List<Job> getJobs(@RequestParam(required = false) String q,
-                             @RequestParam(required = false) String location,
-                             @RequestParam(required = false) String type) {
-        return service.getJobs(q, location, type);
+    public Page<Job> getJobs(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String type,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction) {
+        return service.getJobs(q, location, type, page, size, sortBy, direction);
+    }
+
+    @GetMapping("/stats")
+    public JobStats getStats() {
+        return service.getStats();
     }
 
     @GetMapping("/{id}")
@@ -48,23 +58,13 @@ public class JobController {
 
     @PostMapping("/{id}/apply")
     public ResponseEntity<Map<String, Object>> apply(@PathVariable Long id) {
-        try {
-            Job job = service.getJob(id);
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Application received",
-                    "jobId", job.getId(),
-                    "jobTitle", job.getTitle()
-            ));
-        } catch (JobNotFoundException ex) {
-            // The frontend may briefly hold a stale job after an in-memory DB restart.
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Application received",
-                    "jobId", id,
-                    "jobTitle", "Selected job"
-            ));
-        }
+        Job job = service.getJob(id);
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Application received",
+                "jobId", job.getId(),
+                "jobTitle", job.getTitle()
+        ));
     }
 
     @ExceptionHandler(JobNotFoundException.class)
