@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.Map;
 
@@ -41,16 +42,19 @@ public class JobController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<Job> createJob(@Valid @RequestBody Job job) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(job));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('RECRUITER')")
     public Job updateJob(@PathVariable Long id, @Valid @RequestBody Job job) {
         return service.update(id, job);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('RECRUITER')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteJob(@PathVariable Long id) {
         service.delete(id);
