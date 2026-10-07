@@ -1,0 +1,1 @@
+package com.hireflow.api.user; public enum Role { CANDIDATE, RECRUITER }
