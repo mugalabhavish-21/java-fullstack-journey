@@ -1,0 +1,10 @@
+package com.hireflow.api.auth;
+import com.hireflow.api.user.*; import jakarta.validation.Valid; import jakarta.validation.constraints.*; import org.springframework.http.*; import org.springframework.security.crypto.password.PasswordEncoder; import org.springframework.web.bind.annotation.*; import java.util.Map;
+@RestController @RequestMapping("/api/auth") public class AuthController {
+ private final AppUserRepository users; private final PasswordEncoder encoder; private final JwtService jwt;
+ public AuthController(AppUserRepository u,PasswordEncoder e,JwtService j){users=u;encoder=e;jwt=j;}
+ record Register(@Email @NotBlank String email,@NotBlank @Size(min=6) String password,@NotBlank String name,String role){}
+ record Login(@Email @NotBlank String email,@NotBlank String password){}
+ @PostMapping("/register") public ResponseEntity<?> register(@Valid @RequestBody Register r){if(users.findByEmailIgnoreCase(r.email()).isPresent())return ResponseEntity.status(409).body(Map.of("message","Email already registered")); AppUser u=new AppUser();u.setEmail(r.email().toLowerCase());u.setPassword(encoder.encode(r.password()));u.setName(r.name());u.setRole("RECRUITER".equalsIgnoreCase(r.role())?Role.RECRUITER:Role.CANDIDATE);users.save(u);return ResponseEntity.status(201).body(Map.of("token",jwt.token(u.getEmail(),u.getRole().name()),"user",Map.of("name",u.getName(),"email",u.getEmail(),"role",u.getRole())));}
+ @PostMapping("/login") public ResponseEntity<?> login(@Valid @RequestBody Login r){var u=users.findByEmailIgnoreCase(r.email()).orElse(null);if(u==null||!encoder.matches(r.password(),u.getPassword()))return ResponseEntity.status(401).body(Map.of("message","Invalid email or password"));return ResponseEntity.ok(Map.of("token",jwt.token(u.getEmail(),u.getRole().name()),"user",Map.of("name",u.getName(),"email",u.getEmail(),"role",u.getRole())));}
+}
