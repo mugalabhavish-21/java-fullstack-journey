@@ -1,7 +1,10 @@
 package com.hireflow.api.job;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import java.util.List;
 
 @Service
 public class JobService {
@@ -11,20 +14,32 @@ public class JobService {
         this.repository = repository;
     }
 
-    public List<Job> getJobs(String q, String location, String type) {
-        List<Job> jobs;
+    public Page<Job> getJobs(String q, String location, String type,
+                             int page, int size, String sortBy, String direction) {
+        String safeSort = switch (sortBy == null ? "" : sortBy) {
+            case "title", "company", "location", "type", "level" -> sortBy;
+            default -> "id";
+        };
+
+        Sort.Direction sortDirection =
+                "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC;
+
+        Pageable pageable = PageRequest.of(
+                Math.max(page, 0),
+                Math.min(Math.max(size, 1), 50),
+                Sort.by(sortDirection, safeSort)
+        );
+
         if (q != null && !q.isBlank()) {
-            jobs = repository.search(q.trim());
-        } else {
-            jobs = repository.findAll();
+            return repository.search(q.trim(), pageable);
         }
-        if (location != null && !location.isBlank() && !location.equalsIgnoreCase("All")) {
-            jobs = jobs.stream().filter(j -> j.getLocation().equalsIgnoreCase(location)).toList();
+        if (location != null && !location.isBlank() && !"All".equalsIgnoreCase(location)) {
+            return repository.findByLocationIgnoreCase(location.trim(), pageable);
         }
-        if (type != null && !type.isBlank() && !type.equalsIgnoreCase("All")) {
-            jobs = jobs.stream().filter(j -> j.getType().equalsIgnoreCase(type)).toList();
+        if (type != null && !type.isBlank() && !"All".equalsIgnoreCase(type)) {
+            return repository.findByTypeIgnoreCase(type.trim(), pageable);
         }
-        return jobs;
+        return repository.findAll(pageable);
     }
 
     public Job getJob(Long id) {
@@ -52,5 +67,16 @@ public class JobService {
     public void delete(Long id) {
         if (!repository.existsById(id)) throw new JobNotFoundException(id);
         repository.deleteById(id);
+    }
+
+    public JobStats getStats() {
+        return new JobStats(
+                repository.count(),
+                repository.countByTypeIgnoreCase("Full Time"),
+                repository.countByTypeIgnoreCase("Internship"),
+                repository.findAll().stream()
+                        .filter(job -> "Remote".equalsIgnoreCase(job.getLocation()))
+                        .count()
+        );
     }
 }
