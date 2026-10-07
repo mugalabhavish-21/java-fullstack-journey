@@ -1,0 +1,1 @@
+package com.hireflow.api.application; public enum ApplicationStatus{APPLIED,REVIEWING,SHORTLISTED,INTERVIEW,REJECTED,HIRED}
