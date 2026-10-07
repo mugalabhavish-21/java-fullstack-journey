@@ -2,6 +2,8 @@ package com.hireflow.api.config;
 
 import com.hireflow.api.job.Job;
 import com.hireflow.api.job.JobRepository;
+import com.hireflow.api.user.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class DataInitializer {
     @Bean
-    CommandLineRunner seedJobs(JobRepository repository) {
+    CommandLineRunner seedJobs(JobRepository repository, AppUserRepository users, PasswordEncoder encoder) {
         return args -> {
             if (repository.count() > 0) return;
             repository.save(new Job("React Frontend Developer", "Nova Labs", "Hyderabad", "Full Time", "Fresher", "₹4.5–6 LPA", "React,JavaScript,REST API", "Build responsive interfaces and reusable React components."));
@@ -18,6 +20,10 @@ public class DataInitializer {
             repository.save(new Job("UI Engineer", "PixelWorks", "Pune", "Full Time", "Junior", "₹5–7 LPA", "React,CSS,Figma", "Translate product designs into accessible React components."));
             repository.save(new Job("Frontend Engineer", "CloudNest", "Remote", "Full Time", "Junior", "₹6–9 LPA", "React,TypeScript,Testing", "Create scalable frontend modules with clean architecture."));
             repository.save(new Job("Web Developer Intern", "BrightByte", "Hyderabad", "Internship", "Intern", "₹15k / month", "HTML,CSS,JavaScript", "Build and maintain responsive web pages."));
+            if (users.count() == 0) {
+                AppUser a=new AppUser(); a.setEmail("applicant@hireflow.com"); a.setPassword(encoder.encode("applicant123")); a.setName("Demo Applicant"); a.setRole(Role.APPLICANT); users.save(a);
+                AppUser rec=new AppUser(); rec.setEmail("recruiter@hireflow.com"); rec.setPassword(encoder.encode("recruiter123")); rec.setName("Demo Recruiter"); rec.setRole(Role.RECRUITER); users.save(rec);
+            }
         };
     }
 }
