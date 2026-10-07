@@ -1,140 +1,100 @@
-require("dotenv").config();
+import 'dotenv/config'
+import express from 'express'
+import cors from 'cors'
+import pg from 'pg'
 
-const express = require("express");
-const cors = require("cors");
-const mysql = require("mysql2/promise");
+const { Pool } = pg
+const app = express()
+const port = process.env.PORT || 5000
 
-const app = express();
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+})
 
-app.use(cors());
-app.use(express.json());
+app.use(cors())
+app.use(express.json())
 
-// MySQL connection
-const db = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-});
+const initDb = async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS employees (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(100) NOT NULL,
+      email VARCHAR(150) UNIQUE NOT NULL,
+      department VARCHAR(100) NOT NULL,
+      salary NUMERIC(12, 2) NOT NULL
+    )
+  `)
+  const { rows } = await pool.query('SELECT COUNT(*)::int AS count FROM employees')
+  if (rows[0].count === 0) {
+    await pool.query(
+      `INSERT INTO employees (name, email, department, salary)
+       VALUES
+       ('Bhavish Chary', 'bhavish@gmail.com', 'IT', 45000),
+       ('Rahul Kumar', 'rahul@gmail.com', 'HR', 40000),
+       ('Priya Sharma', 'priya@gmail.com', 'Finance', 50000)`,
+    )
+  }
+}
 
-// GET users
-app.get("/api/users", async (req, res) => {
+app.get('/api/health', async (_req, res) => {
   try {
-    const [users] = await db.query(
-      "SELECT * FROM users ORDER BY id DESC"
-    );
-
-    res.json(users);
+    await pool.query('SELECT 1')
+    res.json({ status: 'ok', database: 'connected' })
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    res.status(500).json({ status: 'error', message: error.message })
   }
-});
+})
 
-// POST user
-app.post("/api/users", async (req, res) => {
-  const { name, email } = req.body;
-
-  if (!name || !email) {
-    return res.status(400).json({
-      message: "Name and email are required.",
-    });
-  }
-
+app.get('/api/employees', async (_req, res) => {
   try {
-    const [result] = await db.query(
-      "INSERT INTO users (name, email) VALUES (?, ?)",
-      [name, email]
-    );
-
-    res.status(201).json({
-      id: result.insertId,
-      name,
-      email,
-    });
+    const { rows } = await pool.query('SELECT * FROM employees ORDER BY id DESC')
+    res.json(rows)
   } catch (error) {
-    if (error.code === "ER_DUP_ENTRY") {
-      return res.status(409).json({
-        message: "This email already exists.",
-      });
-    }
-
-    res.status(500).json({
-      message: error.message,
-    });
+    res.status(500).json({ message: error.message })
   }
-});
+})
 
-// AI route - OpenRouter
-app.post("/api/ask-ai", async (req, res) => {
-  const { question } = req.body;
-
-  if (!question) {
-    return res.status(400).json({
-      message: "Question is required.",
-    });
-  }
-  console.log(
-  "OpenRouter key loaded:",
-  Boolean(process.env.OPENROUTER_API_KEY)
-);
-
+app.post('/api/employees', async (req, res) => {
   try {
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: "openrouter/free",
-          messages: [
-            {
-              role: "user",
-              content: question,
-            },
-          ],
-        }),
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("OpenRouter API error:", data);
-
-      return res.status(response.status).json({
-        message: "OpenRouter API request failed.",
-        error: data,
-      });
-    }
-
-    const answer = data.choices?.[0]?.message?.content;
-
-    if (!answer) {
-      return res.status(500).json({
-        message: "No AI response was returned.",
-      });
-    }
-
-    res.json({
-      answer,
-    });
+    const { name, email, department, salary } = req.body
+    const { rows } = await pool.query(
+      'INSERT INTO employees (name, email, department, salary) VALUES ($1, $2, $3, $4) RETURNING *',
+      [name, email, department, salary],
+    )
+    res.status(201).json(rows[0])
   } catch (error) {
-    console.error("Server error:", error);
-
-    res.status(500).json({
-      message: "Something went wrong.",
-    });
+    res.status(400).json({ message: error.code === '23505' ? 'Email already exists' : error.message })
   }
-});
+})
 
-// Start server
-app.listen(process.env.PORT || 5000, () => {
-  console.log(
-    `Backend running at http://localhost:${process.env.PORT || 5000}`
-  );
-});
+app.put('/api/employees/:id', async (req, res) => {
+  try {
+    const { name, email, department, salary } = req.body
+    const { rows } = await pool.query(
+      'UPDATE employees SET name=$1, email=$2, department=$3, salary=$4 WHERE id=$5 RETURNING *',
+      [name, email, department, salary, req.params.id],
+    )
+    if (!rows[0]) return res.status(404).json({ message: 'Employee not found' })
+    res.json(rows[0])
+  } catch (error) {
+    res.status(400).json({ message: error.code === '23505' ? 'Email already exists' : error.message })
+  }
+})
+
+app.delete('/api/employees/:id', async (req, res) => {
+  try {
+    const result = await pool.query('DELETE FROM employees WHERE id=$1', [req.params.id])
+    if (!result.rowCount) return res.status(404).json({ message: 'Employee not found' })
+    res.status(204).send()
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+})
+
+initDb()
+  .then(() => app.listen(port, () => console.log(`Management API running on port ${port}`)))
+  .catch((error) => {
+    console.error('Database initialization failed:', error)
+    process.exit(1)
+  })
