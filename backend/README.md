@@ -1,36 +1,30 @@
-# HireFlow Spring Boot Backend
+# HireFlow API
 
-REST API backend for the HireFlow React job board.
+Enhanced Spring Boot REST API for the HireFlow recruitment portal.
 
-## Stack
-- Java 17
-- Spring Boot
-- Spring Web
-- Spring Data JPA
-- H2 Database
-- Bean Validation
+Features:
+- Search by title, company, or skills
+- Combined keyword, location, and job-type filters
+- Pagination with page size capped at 50
+- Sorting
+- Job statistics
+- Bean validation
+- Global validation error responses
+- 404 handling
+- H2 local persistence
+- Service-layer unit test
 
-## Run locally
+APIs:
+GET /api/jobs?q=java&location=Hyderabad&type=Full%20Time&page=0&size=6&sortBy=title&direction=asc
+GET /api/jobs/stats
+GET /api/jobs/{id}
+POST /api/jobs
+PUT /api/jobs/{id}
+DELETE /api/jobs/{id}
+POST /api/jobs/{id}/apply
 
-```bash
-cd backend
-mvn spring-boot:run
-```
+The list endpoint returns Spring Page metadata including content, totalElements, totalPages, number, and size.
 
-The API starts on `http://localhost:8080`.
-
-## Endpoints
-
-- `GET /api/jobs` — list jobs
-- `GET /api/jobs/{id}` — get one job
-- `GET /api/jobs?q=react&location=Hyderabad&type=Full%20Time` — search/filter
-- `POST /api/jobs` — create a job
-- `PUT /api/jobs/{id}` — update a job
-- `DELETE /api/jobs/{id}` — delete a job
-- `POST /api/jobs/{id}/apply` — submit an application
-
-The H2 console is available at `/h2-console` during local development.
-
-## Architecture
-
-React frontend → REST API → Controller → Service → JPA Repository → H2 database
+Run locally with: mvn spring-boot:run
+API: http://localhost:8080
+H2 console: http://localhost:8080/h2-console
