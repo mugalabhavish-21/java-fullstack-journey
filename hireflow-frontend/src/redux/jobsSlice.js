@@ -27,6 +27,9 @@ export const fetchJobs = createAsyncThunk('jobs/fetchJobs', async (params = {}) 
 export const fetchStats = createAsyncThunk('jobs/fetchStats', () => request('/jobs/stats'));
 export const applyJob = createAsyncThunk('jobs/applyJob', (id) => request('/applications/' + id, { method: 'POST', body: JSON.stringify({}) }));
 export const fetchMyApplications = createAsyncThunk('jobs/fetchMyApplications', () => request('/applications/mine'));
+export const fetchSavedJobs = createAsyncThunk('jobs/fetchSavedJobs', () => request('/saved-jobs'));
+export const saveJob = createAsyncThunk('jobs/saveJob', (id) => request('/saved-jobs/' + id, { method: 'POST' }));
+export const unsaveJob = createAsyncThunk('jobs/unsaveJob', (id) => request('/saved-jobs/' + id, { method: 'DELETE' }));
 export const fetchApplications = createAsyncThunk('jobs/fetchApplications', () => request('/applications'));
 export const updateApplicationStatus = createAsyncThunk('jobs/updateApplicationStatus', ({ id, status }) => request('/applications/' + id + '/status', { method: 'PATCH', body: JSON.stringify({ status }) }));
 export const createJob = createAsyncThunk('jobs/createJob', (job) => request('/jobs', { method: 'POST', body: JSON.stringify(job) }));
@@ -40,7 +43,7 @@ export const markNotificationRead = createAsyncThunk('jobs/markNotificationRead'
 const slice = createSlice({
   name: 'jobs',
   initialState: {
-    page: null, stats: null, applications: [], myApplications: [], interviews: [], notifications: [],
+    page: null, stats: null, applications: [], myApplications: [], savedJobs: [], interviews: [], notifications: [],
     status: 'idle', statsStatus: 'idle', applyStatus: 'idle', error: null
   },
   reducers: { clearApply(state) { state.applyStatus = 'idle'; } },
@@ -57,6 +60,10 @@ const slice = createSlice({
       .addCase(applyJob.rejected, (state, action) => { state.applyStatus = 'failed'; state.error = action.error.message; })
       .addCase(fetchMyApplications.fulfilled, (state, action) => { state.myApplications = action.payload; })
       .addCase(fetchMyApplications.rejected, (state, action) => { state.error = action.error.message; })
+      .addCase(fetchSavedJobs.fulfilled, (state, action) => { state.savedJobs = action.payload; })
+      .addCase(fetchSavedJobs.rejected, (state, action) => { state.error = action.error.message; })
+      .addCase(saveJob.fulfilled, (state, action) => { if (!state.savedJobs.some((item) => item.jobId === action.payload.jobId)) state.savedJobs.push(action.payload); })
+      .addCase(unsaveJob.fulfilled, (state, action) => { state.savedJobs = state.savedJobs.filter((item) => item.jobId !== action.meta.arg); })
       .addCase(fetchApplications.fulfilled, (state, action) => { state.applications = action.payload; })
       .addCase(fetchApplications.rejected, (state, action) => { state.error = action.error.message; })
       .addCase(updateApplicationStatus.fulfilled, (state, action) => { state.applications = state.applications.map((item) => item.id === action.payload.id ? action.payload : item); })
