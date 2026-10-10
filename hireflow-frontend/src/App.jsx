@@ -3,7 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchJobs, fetchStats, applyJob, fetchMyApplications, fetchApplications,
   updateApplicationStatus, createJob, updateJob, deleteJob, fetchInterviews,
-  scheduleInterview, fetchNotifications, markNotificationRead
+  scheduleInterview, fetchNotifications, markNotificationRead,
+  fetchSavedJobs, saveJob, unsaveJob
 } from './redux/jobsSlice';
 
 const API = (import.meta.env.VITE_API_URL || 'http://localhost:8080/api').replace(/\/$/, '');
@@ -151,7 +152,7 @@ function NotificationPanel({ notifications, dispatch, flash }) {
 
 function Applicant({ user, onLogout }) {
   const dispatch = useDispatch();
-  const { page, status, error, myApplications, applyStatus, interviews, notifications } = useSelector((state) => state.jobs);
+  const { page, status, error, myApplications, savedJobs, applyStatus, interviews, notifications } = useSelector((state) => state.jobs);
   const [tab, setTab] = useState('jobs');
   const [query, setQuery] = useState('');
   const [location, setLocation] = useState('All');
@@ -166,6 +167,7 @@ function Applicant({ user, onLogout }) {
   useEffect(() => {
     dispatch(fetchJobs({ page: 0, size: 30 }));
     dispatch(fetchMyApplications());
+    dispatch(fetchSavedJobs());
     dispatch(fetchInterviews(false));
     dispatch(fetchNotifications());
     api('/profile').then(setProfile).catch((err) => setFlashMessage('Profile: ' + err.message));
@@ -195,8 +197,18 @@ function Applicant({ user, onLogout }) {
     } catch (err) { setFlashMessage(err.message || 'Unable to submit application.'); }
   };
 
+  const toggleSavedJob = async (jobId, currentlySaved) => {
+    try {
+      if (currentlySaved) await dispatch(unsaveJob(jobId)).unwrap();
+      else await dispatch(saveJob(jobId)).unwrap();
+      await dispatch(fetchSavedJobs());
+      setFlashMessage(currentlySaved ? 'Removed from saved jobs.' : 'Job saved for later.');
+    } catch (err) { setFlashMessage(err.message || 'Unable to update saved jobs.'); }
+  };
+
   const tabs = [
     { key: 'jobs', label: 'Find jobs' },
+    { key: 'saved', label: 'Saved jobs (' + savedJobs.length + ')' },
     { key: 'applications', label: 'My applications (' + myApplications.length + ')' },
     { key: 'interviews', label: 'Interviews' },
     { key: 'profile', label: 'My profile' },
@@ -226,13 +238,17 @@ function Applicant({ user, onLogout }) {
           {error && <div className="alert alert-error">{error}</div>}
           {status === 'loading' ? <div className="loading-state">Loading opportunities…</div> : jobs.length ? <section className="job-list">{jobs.map((job) => {
             const applied = myApplications.some((item) => item.jobId === job.id);
+            const saved = savedJobs.some((item) => item.jobId === job.id);
             return <article className="job-card" key={job.id}>
               <div className="company-logo">{(job.company || 'H').charAt(0).toUpperCase()}</div>
               <div className="job-main"><div className="job-title-row"><h3>{job.title}</h3><span className="status-chip chip-neutral">{job.level || 'Open role'}</span></div><p className="job-company">{job.company} <span>·</span> {job.location}</p><p className="job-description">{job.description || 'Join the team and build impactful products.'}</p><div className="tag-list">{(job.skills || '').split(',').filter(Boolean).map((skill) => <span key={skill.trim()}>{skill.trim()}</span>)}</div><div className="job-meta"><span>◷ {job.type}</span><span>₹ {job.salary || 'Salary not disclosed'}</span></div></div>
-              <div className="job-actions"><button className="button button-primary" disabled={applied || applyStatus === 'loading'} onClick={() => handleApply(job)}>{applied ? 'Applied' : applyStatus === 'loading' ? 'Submitting…' : 'Apply now'}</button></div>
+              <div className="job-actions"><button className="button button-outline button-small" onClick={() => toggleSavedJob(job.id, saved)}>{saved ? 'Saved ✓' : 'Save job'}</button><button className="button button-primary" disabled={applied || applyStatus === 'loading'} onClick={() => handleApply(job)}>{applied ? 'Applied' : applyStatus === 'loading' ? 'Submitting…' : 'Apply now'}</button></div>
             </article>;
           })}</section> : <EmptyState title="No jobs match your search" detail="Try a different keyword or clear the location and job-type filters." />}
         </>}
+        {tab === 'saved' && <section className="panel"><div className="section-heading"><div><span className="eyebrow">BOOKMARKED OPPORTUNITIES</span><h2>Saved jobs</h2></div><span className="metric-pill">{savedJobs.length} saved</span></div>
+          {savedJobs.length ? <div className="manage-job-list">{savedJobs.map((item) => { const job = jobs.find((candidateJob) => candidateJob.id === item.jobId); return <article className="manage-job" key={item.id}><div className="company-logo">{(job?.company || 'H').charAt(0).toUpperCase()}</div><div className="manage-job-info"><h3>{job?.title || 'Job #' + item.jobId}</h3><p>{job ? job.company + ' · ' + job.location + ' · ' + job.type : 'This listing may no longer be active.'}</p></div><div className="manage-job-actions">{job && <button className="button button-outline button-small" onClick={() => setTab('jobs')}>Find role</button>}<button className="button button-danger button-small" onClick={() => toggleSavedJob(item.jobId, true)}>Remove</button></div></article>; })}</div> : <EmptyState title="No saved jobs yet" detail="Save roles that interest you and come back to them later." />}
+        </section>}
         {tab === 'applications' && <section className="panel"><div className="section-heading"><div><span className="eyebrow">YOUR PROGRESS</span><h2>My applications</h2></div><span className="metric-pill">{myApplications.length} total</span></div>
           {myApplications.length ? <div className="table-wrap"><table><thead><tr><th>Position</th><th>Date applied</th><th>Status</th></tr></thead><tbody>{myApplications.map((application) => {
             const job = jobs.find((item) => item.id === application.jobId);
