@@ -313,7 +313,7 @@ function Recruiter({ user, onLogout }) {
     try {
       await dispatch(scheduleInterview({
         applicationId: scheduleTarget.id,
-        scheduledAt: interviewForm.scheduledAt,
+        scheduledAt: new Date(interviewForm.scheduledAt).toISOString(),
         type: interviewForm.type,
         meetingLink: interviewForm.meetingLink
       })).unwrap();
