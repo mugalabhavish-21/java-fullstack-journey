@@ -4,8 +4,8 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -60,19 +60,9 @@ public class JobController {
         service.delete(id);
     }
 
-    @PostMapping("/{id}/apply")
-    public ResponseEntity<Map<String, Object>> apply(@PathVariable Long id) {
-        Job job = service.getJob(id);
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Application received",
-                "jobId", job.getId(),
-                "jobTitle", job.getTitle()
-        ));
-    }
-
     @ExceptionHandler(JobNotFoundException.class)
     public ResponseEntity<Map<String, String>> notFound(JobNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", ex.getMessage()));
     }
 }
