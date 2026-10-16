@@ -234,8 +234,10 @@ The Blueprint reads the existing `backend/Dockerfile`, creates a strong `JWT_SEC
 ## Security and production notes
 
 - Passwords are hashed using BCrypt; they are not stored as plain text.
-- The app uses a custom HMAC-SHA256 signed bearer-token implementation. Before using HireFlow for real users or sensitive data, replace it with a well-supported JWT library and review token validation, secret management, expiration, and key rotation.
-- Configure a strong, unique `JWT_SECRET` in the deployment environment. Do not rely on the source-code development fallback.
+- The app issues standard compact JWTs signed with HS256 and validates signature, issuer, expiry, subject, and role claims through JJWT.
+- The `prod` Spring profile requires a strong `JWT_SECRET` (at least 32 bytes); the development-only fallback is disabled in production.
+- Invalid or expired bearer tokens return `401 Unauthorized`; authenticated users who lack the required role receive `403 Forbidden`.
+- Configure a strong, unique `JWT_SECRET` in each deployment and rotate it deliberately. Rotating the secret invalidates previously issued tokens, so users must sign in again.
 - Demo recruiter credentials are deliberately included for portfolio testing. Disable or rotate demo accounts before any public production use.
 - Run the automated tests and smoke-test both roles and the main flows after deploying changes. A successful build by itself does not guarantee that every user journey works.
 

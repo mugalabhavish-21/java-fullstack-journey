@@ -17,11 +17,12 @@ import java.util.Map;
 public class AuthController {
     private final AppUserRepository users;
     private final PasswordEncoder encoder;
-    private final JwtService jwt = new JwtService();
+    private final JwtService jwt;
 
-    public AuthController(AppUserRepository users, PasswordEncoder encoder) {
+    public AuthController(AppUserRepository users, PasswordEncoder encoder, JwtService jwt) {
         this.users = users;
         this.encoder = encoder;
+        this.jwt = jwt;
     }
 
     @PostMapping("/register")

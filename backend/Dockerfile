@@ -6,7 +6,7 @@ COPY pom.xml .
 RUN mvn -B -ntp dependency:go-offline
 
 COPY src ./src
-RUN mvn -B -ntp -DskipTests package
+RUN mvn -B -ntp package
 
 # Run the packaged application on a smaller Java 17 runtime.
 FROM eclipse-temurin:17-jre-jammy
