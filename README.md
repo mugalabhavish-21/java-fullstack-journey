@@ -215,6 +215,20 @@ java-fullstack-journey/
 └── README.md
 ```
 
+## Deploy backend to Render
+
+A Render Blueprint is included at [`render.yaml`](render.yaml). To deploy it:
+
+1. In Render, choose **New → Blueprint** and connect this repository.
+2. Select the `hireflow-complete` branch.
+3. Review the Blueprint resources before applying them. It defines a Docker-based `hireflow-api` web service and a PostgreSQL database.
+4. Wait for both resources to become available, then test `https://YOUR-RENDER-SERVICE.onrender.com/api/jobs`.
+5. Update the Vercel frontend's `VITE_API_URL` to `https://YOUR-RENDER-SERVICE.onrender.com/api` and redeploy the frontend.
+
+The Blueprint reads the existing `backend/Dockerfile`, creates a strong `JWT_SECRET` automatically, and references PostgreSQL credentials without hardcoding them in the repository.
+
+**Free-tier limitations:** Render Free web services spin down after 15 minutes without inbound traffic and may take about a minute to wake. Free Render Postgres databases expire 30 days after creation. Use a database with an appropriate longer-term plan or migrate before the free database expires if persistent data must be retained. See [Render's free-tier documentation](https://render.com/docs/free).
+
 ## Security and production notes
 
 - Passwords are hashed using BCrypt; they are not stored as plain text.
