@@ -59,7 +59,8 @@ class JwtServiceTest {
 
     @Test
     void productionProfileRequiresSecret() {
-        MockEnvironment environment = new MockEnvironment().withActiveProfiles("prod");
+        MockEnvironment environment = new MockEnvironment();
+        environment.setActiveProfiles("prod");
 
         IllegalStateException exception =
                 assertThrows(IllegalStateException.class, () -> new JwtService(environment));

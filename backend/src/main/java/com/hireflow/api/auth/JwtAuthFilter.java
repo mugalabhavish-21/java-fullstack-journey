@@ -46,13 +46,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                             null,
                             List.of(new SimpleGrantedAuthority("ROLE_" + role.name())));
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            chain.doFilter(request, response);
         } catch (IllegalArgumentException exception) {
             SecurityContextHolder.clearContext();
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
             response.getWriter().write("{\"message\":\"Invalid or expired bearer token\"}");
+            return;
         }
+
+        chain.doFilter(request, response);
     }
 }
