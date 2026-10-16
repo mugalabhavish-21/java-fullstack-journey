@@ -5,10 +5,10 @@ HireFlow is a full-stack job portal built with **React, Redux Toolkit, Spring Bo
 ## Live application
 
 - **Frontend:** https://hireflow-react-interview.vercel.app
-- **Backend API:** https://hireflow-api-production-b901.up.railway.app/api
+- **Backend API:** To be published on Render; deploy using the Blueprint instructions below.
 - **Source branch:** [`hireflow-complete`](https://github.com/mugalabhavish-21/java-fullstack-journey/tree/hireflow-complete)
 
-The frontend is hosted on Vercel and the backend API on Railway. The production backend is configured to use PostgreSQL. For local development, the Spring Boot configuration defaults to an in-memory H2 database unless datasource environment variables are supplied.
+The frontend is hosted on Vercel. The backend deployment is configured for Render with PostgreSQL. For local development, the Spring Boot configuration defaults to an in-memory H2 database unless datasource environment variables are supplied.
 
 ## Features
 
@@ -216,6 +216,8 @@ java-fullstack-journey/
 ```
 
 ## Deploy backend to Render
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mugalabhavish-21/java-fullstack-journey/tree/hireflow-complete)
 
 A Render Blueprint is included at [`render.yaml`](render.yaml). To deploy it:
 
