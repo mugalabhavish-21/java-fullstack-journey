@@ -1,0 +1,45 @@
+# Render Blueprint for HireFlow
+# Deploy this Blueprint from the hireflow-complete branch.
+# Note: Render's Free Postgres databases expire 30 days after creation.
+services:
+  - type: web
+    name: hireflow-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/jobs
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: update
+      - key: DB_HOST
+        fromDatabase:
+          name: hireflow-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: hireflow-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: hireflow-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: hireflow-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: hireflow-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+
+databases:
+  - name: hireflow-db
+    databaseName: hireflow
+    user: hireflow
+    plan: free
+    postgresMajorVersion: "18"
