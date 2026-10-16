@@ -65,7 +65,7 @@ public class JwtService {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("Token subject email is required");
         }
-        if (!ALLOWED_ROLES.contains(role)) {
+        if (role == null || !ALLOWED_ROLES.contains(role)) {
             throw new IllegalArgumentException("Unsupported token role");
         }
 
@@ -91,7 +91,7 @@ public class JwtService {
 
             String subject = claims.getSubject();
             String role = claims.get("role", String.class);
-            if (subject == null || subject.isBlank() || !ALLOWED_ROLES.contains(role)) {
+            if (subject == null || subject.isBlank() || role == null || !ALLOWED_ROLES.contains(role)) {
                 throw new IllegalArgumentException("Required JWT claims are missing or invalid");
             }
             return claims;
