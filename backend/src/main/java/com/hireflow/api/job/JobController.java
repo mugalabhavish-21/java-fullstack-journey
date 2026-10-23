@@ -52,27 +52,19 @@ public class JobController {
 
     @PostMapping("/{id}/apply")
     public ResponseEntity<Map<String, Object>> apply(@PathVariable Long id) {
-        try {
-            Job job = service.getJob(id);
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Application received",
-                    "jobId", job.getId(),
-                    "jobTitle", job.getTitle()
-            ));
-        } catch (JobNotFoundException ex) {
-            // The frontend may briefly hold a stale job after an in-memory DB restart.
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Application received",
-                    "jobId", id,
-                    "jobTitle", "Selected job"
-            ));
-        }
+        // Do not claim an application was received for a job that does not exist.
+        Job job = service.getJob(id);
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Application received",
+                "jobId", job.getId(),
+                "jobTitle", job.getTitle()
+        ));
     }
 
     @ExceptionHandler(JobNotFoundException.class)
     public ResponseEntity<Map<String, String>> notFound(JobNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", ex.getMessage()));
     }
 }
