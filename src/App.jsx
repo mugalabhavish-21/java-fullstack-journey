@@ -1,208 +1,100 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import {
-  addEmployee,
-  deleteEmployee,
-  fetchEmployees,
-  updateEmployee,
-} from './redux/employeeSlice'
 import './App.css'
 
-const emptyForm = { name: '', email: '', department: 'IT', salary: '' }
+const API = (import.meta.env.VITE_API_BASE_URL || 'https://java-fullstack-journey-production.up.railway.app/api').replace(/\/$/, '')
+const SAVED_KEY = 'hireflow-saved-job-ids'
+const readSaved = () => { try { const v = JSON.parse(localStorage.getItem(SAVED_KEY) || '[]'); return Array.isArray(v) ? v : [] } catch { return [] } }
+const normalize = (job) => ({ ...job, skills: Array.isArray(job.skills) ? job.skills : String(job.skills || '').split(',').map(s => s.trim()).filter(Boolean) })
 
-function App() {
-  const dispatch = useDispatch()
-  const { items, status, error } = useSelector((state) => state.employees)
-  const [form, setForm] = useState(emptyForm)
-  const [editingId, setEditingId] = useState(null)
-  const [search, setSearch] = useState('')
-  const [department, setDepartment] = useState('All')
+export default function App() {
+  const [jobs, setJobs] = useState([])
+  const [query, setQuery] = useState('')
+  const [location, setLocation] = useState('All locations')
+  const [type, setType] = useState('All types')
+  const [sort, setSort] = useState('recommended')
+  const [saved, setSaved] = useState(readSaved)
+  const [savedOnly, setSavedOnly] = useState(false)
+  const [selected, setSelected] = useState(null)
+  const [dark, setDark] = useState(() => localStorage.getItem('hireflow-theme') === 'dark')
+  const [status, setStatus] = useState('loading')
+  const [error, setError] = useState('')
+  const [toast, setToast] = useState('')
+  const [applying, setApplying] = useState(null)
 
+  useEffect(() => { localStorage.setItem(SAVED_KEY, JSON.stringify(saved)) }, [saved])
+  useEffect(() => { document.documentElement.dataset.theme = dark ? 'dark' : 'light'; localStorage.setItem('hireflow-theme', dark ? 'dark' : 'light') }, [dark])
   useEffect(() => {
-    dispatch(fetchEmployees())
-  }, [dispatch])
+    const controller = new AbortController()
+    const params = new URLSearchParams()
+    if (query.trim()) params.set('q', query.trim())
+    if (location !== 'All locations') params.set('location', location)
+    if (type !== 'All types') params.set('type', type)
+    setStatus('loading'); setError('')
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await fetch(API + '/jobs?' + params.toString(), { signal: controller.signal })
+        if (!response.ok) throw new Error('Job service returned HTTP ' + response.status)
+        const data = await response.json()
+        if (!Array.isArray(data)) throw new Error('Unexpected response from job service')
+        setJobs(data.map(normalize)); setStatus('success')
+      } catch (err) {
+        if (err.name === 'AbortError') return
+        setError(err.message || 'Could not load jobs'); setStatus('error')
+      }
+    }, 250)
+    return () => { window.clearTimeout(timer); controller.abort() }
+  }, [query, location, type])
 
-  const departments = useMemo(
-    () => ['All', ...new Set(items.map((employee) => employee.department))],
-    [items],
-  )
+  const locations = ['All locations', 'Hyderabad', 'Bengaluru', 'Pune', 'Remote', 'Chennai', 'Mumbai']
+  const visible = useMemo(() => {
+    const list = savedOnly ? jobs.filter(j => saved.includes(j.id)) : [...jobs]
+    if (sort === 'title') list.sort((a,b) => a.title.localeCompare(b.title))
+    if (sort === 'company') list.sort((a,b) => a.company.localeCompare(b.company))
+    return list
+  }, [jobs, savedOnly, saved, sort])
 
-  const filteredEmployees = useMemo(() => {
-    const query = search.toLowerCase().trim()
-    return items.filter((employee) => {
-      const matchesSearch =
-        !query ||
-        employee.name.toLowerCase().includes(query) ||
-        employee.email.toLowerCase().includes(query)
-      const matchesDepartment =
-        department === 'All' || employee.department === department
-      return matchesSearch && matchesDepartment
-    })
-  }, [items, search, department])
-
-  const handleSubmit = async (event) => {
-    event.preventDefault()
-    if (!form.name || !form.email || !form.salary) return
-
-    if (editingId) {
-      await dispatch(updateEmployee({ id: editingId, employee: form }))
-    } else {
-      await dispatch(addEmployee(form))
-    }
-
-    setForm(emptyForm)
-    setEditingId(null)
+  function notify(message) { setToast(message); window.setTimeout(() => setToast(''), 3000) }
+  function toggleSaved(job) {
+    const exists = saved.includes(job.id)
+    setSaved(ids => exists ? ids.filter(id => id !== job.id) : [...ids, job.id])
+    notify(exists ? 'Removed from saved jobs' : 'Job saved for later')
   }
-
-  const handleEdit = (employee) => {
-    setEditingId(employee.id)
-    setForm({
-      name: employee.name,
-      email: employee.email,
-      department: employee.department,
-      salary: employee.salary,
-    })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+  async function apply(job) {
+    setApplying(job.id)
+    try {
+      const response = await fetch(API + '/jobs/' + job.id + '/apply', { method: 'POST' })
+      if (!response.ok) throw new Error('Application endpoint returned HTTP ' + response.status)
+      notify('Demo request acknowledged. Applications are not stored yet.')
+    } catch (err) { notify(err.message || 'Could not send request') }
+    finally { setApplying(null) }
   }
+  function reset() { setQuery(''); setLocation('All locations'); setType('All types'); setSavedOnly(false) }
 
-  const handleDelete = async (id) => {
-    await dispatch(deleteEmployee(id))
-  }
-
-  return (
-    <div className="app-shell">
-      <header className="hero">
-        <div>
-          <span className="badge">Redux Toolkit • Full Stack</span>
-          <h1>ManageHub</h1>
-          <p>Employee Management System</p>
-        </div>
-        <div className="hero-stat">
-          <strong>{items.length}</strong>
-          <span>Employees</span>
-        </div>
-      </header>
-
-      <main className="dashboard">
-        <section className="card form-card">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">{editingId ? 'Edit employee' : 'New employee'}</span>
-              <h2>{editingId ? 'Update employee' : 'Add employee'}</h2>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="employee-form">
-            <input
-              placeholder="Full name"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              required
-            />
-            <input
-              type="email"
-              placeholder="Email address"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              required
-            />
-            <select
-              value={form.department}
-              onChange={(e) => setForm({ ...form, department: e.target.value })}
-            >
-              <option>IT</option>
-              <option>HR</option>
-              <option>Finance</option>
-              <option>Sales</option>
-              <option>Marketing</option>
-            </select>
-            <input
-              type="number"
-              min="0"
-              placeholder="Salary"
-              value={form.salary}
-              onChange={(e) => setForm({ ...form, salary: e.target.value })}
-              required
-            />
-            <div className="form-actions">
-              <button className="primary-btn" type="submit">
-                {editingId ? 'Update Employee' : 'Add Employee'}
-              </button>
-              {editingId && (
-                <button
-                  className="secondary-btn"
-                  type="button"
-                  onClick={() => {
-                    setEditingId(null)
-                    setForm(emptyForm)
-                  }}
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
-          </form>
-        </section>
-
-        <section className="card table-card">
-          <div className="toolbar">
-            <div>
-              <span className="eyebrow">Employee directory</span>
-              <h2>Manage employees</h2>
-            </div>
-            <div className="filters">
-              <input
-                placeholder="Search name or email..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              <select value={department} onChange={(e) => setDepartment(e.target.value)}>
-                {departments.map((item) => (
-                  <option key={item}>{item}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {status === 'loading' && <p className="state-message">Loading employees...</p>}
-          {error && <p className="error-message">{error}</p>}
-
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Department</th>
-                  <th>Salary</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredEmployees.map((employee) => (
-                  <tr key={employee.id}>
-                    <td><strong>{employee.name}</strong></td>
-                    <td>{employee.email}</td>
-                    <td><span className="department-pill">{employee.department}</span></td>
-                    <td>₹{Number(employee.salary).toLocaleString('en-IN')}</td>
-                    <td>
-                      <div className="row-actions">
-                        <button className="edit-btn" onClick={() => handleEdit(employee)}>Edit</button>
-                        <button className="delete-btn" onClick={() => handleDelete(employee.id)}>Delete</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {status !== 'loading' && filteredEmployees.length === 0 && (
-              <p className="state-message">No employees found.</p>
-            )}
-          </div>
-        </section>
-      </main>
-    </div>
-  )
+  return <div className="app">
+    <header className="topbar">
+      <a className="brand" href="#top"><span className="brand-mark">H</span><span><strong>hireflow</strong><small>Find work that moves you.</small></span></a>
+      <nav aria-label="Main navigation"><button className={!savedOnly ? 'nav-link active' : 'nav-link'} onClick={() => setSavedOnly(false)}>Find jobs</button><button className={savedOnly ? 'nav-link active' : 'nav-link'} onClick={() => setSavedOnly(true)}>Saved jobs <span className="nav-count">{saved.length}</span></button></nav>
+      <button className="theme-toggle" onClick={() => setDark(v => !v)} aria-label="Toggle theme">{dark ? '☀' : '☾'}</button>
+    </header>
+    <main id="top">
+      <section className="hero"><div className="hero-copy"><span className="eyebrow"><i className="pulse" /> YOUR NEXT CHAPTER STARTS HERE</span><h1>Find a job that<br/><em>fits your future.</em></h1><p>Thoughtful opportunities for people ready to do meaningful work. Find your next role, save the ones you love, and take the next step.</p><div className="hero-points"><span>✓ Curated opportunities</span><span>✓ Career possibilities</span></div></div>
+        <div className="hero-art" aria-hidden="true"><div className="art-orbit orbit-one"/><div className="art-orbit orbit-two"/><div className="art-card"><span className="art-icon">↗</span><div className="art-lines"><i/><i/><i/></div><b>Your next move</b></div><div className="art-float float-top">✳ &nbsp; Grow with purpose</div><div className="art-float float-bottom">✓ &nbsp; New possibilities</div></div>
+      </section>
+      <section className="search-panel" aria-label="Search jobs"><label className="search-box"><span>⌕</span><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Job title, company, or skill" aria-label="Search jobs"/></label><label className="filter-box"><span>⌖</span><select value={location} onChange={e => setLocation(e.target.value)} aria-label="Location">{locations.map(l => <option key={l}>{l}</option>)}</select></label><label className="filter-box"><span>▤</span><select value={type} onChange={e => setType(e.target.value)} aria-label="Employment type"><option>All types</option><option>Full Time</option><option>Part Time</option><option>Contract</option><option>Internship</option><option>Remote</option></select></label><button className="clear-button" onClick={reset}>Reset</button></section>
+      <section className="jobs-section" id="jobs"><div className="section-heading"><div><span className="eyebrow">THE OPPORTUNITY BOARD</span><h2>{savedOnly ? 'Your saved jobs' : 'Explore open roles'}<span className="heading-dot">.</span></h2><p>{savedOnly ? 'Your shortlist, all in one place.' : 'A good next step can change everything.'}</p></div><label className="sort-control">Sort by <select value={sort} onChange={e => setSort(e.target.value)}><option value="recommended">Recommended</option><option value="title">Job title</option><option value="company">Company</option></select></label></div>
+        {status === 'loading' && <div className="state-panel"><span className="spinner"/><strong>Finding opportunities…</strong><p>Loading jobs from HireFlow.</p></div>}
+        {status === 'error' && <div className="state-panel"><strong>We couldn't load the jobs.</strong><p>{error}</p><button className="primary-button" onClick={() => { setStatus('loading'); setQuery(q => q + ' ') }}>Try again</button><small>Check that the Spring Boot API is online and CORS allows this frontend.</small></div>}
+        {status === 'success' && visible.length === 0 && <div className="state-panel"><strong>{savedOnly ? 'No saved jobs yet' : 'No matching jobs found'}</strong><p>{savedOnly ? 'Save a job and it will appear here.' : 'Try a different keyword or clear your filters.'}</p><button className="secondary-button" onClick={reset}>Clear filters</button></div>}
+        {status === 'success' && visible.length > 0 && <div className="job-grid">{visible.map(job => {
+          const initials = (job.company || 'HF').split(/\s+/).map(p => p[0]).join('').slice(0,2).toUpperCase()
+          const isSaved = saved.includes(job.id)
+          return <article className="job-card" key={job.id}><div className="job-card-top"><div className={'company-logo logo-' + (Number(job.id)%5)}>{initials}</div><button className={isSaved ? 'save-button saved' : 'save-button'} onClick={() => toggleSaved(job)} aria-label={isSaved ? 'Unsave ' + job.title : 'Save ' + job.title}>{isSaved ? '♥' : '♡'}</button></div><div className="job-meta"><span className="job-type">{job.type || 'Opportunity'}</span><span>{job.level || 'All levels'}</span></div><h3>{job.title}</h3><p className="company-name">{job.company}</p><p className="job-description">{job.description || 'Explore this opportunity and learn more about the role.'}</p><div className="job-facts"><span>⌖ {job.location}</span>{job.salary && <span className="salary">{job.salary}</span>}</div><div className="skill-list">{job.skills.slice(0,4).map(skill => <span key={skill}>{skill}</span>)}</div><div className="job-card-footer"><button className="details-button" onClick={() => setSelected(job)}>View details <span>↗</span></button><button className="apply-button" onClick={() => apply(job)} disabled={applying === job.id}>{applying === job.id ? 'Sending…' : 'Quick apply'}</button></div></article>
+        })}</div>}
+      </section>
+      <section className="bottom-cta"><div className="cta-icon">✦</div><div><span className="eyebrow">YOUR FUTURE ISN'T ONE-SIZE-FITS-ALL</span><h2>One good opportunity can change everything.</h2><p>Keep exploring. Your next chapter might be closer than you think.</p></div><a className="cta-link" href="#jobs">Explore roles ↗</a></section>
+    </main>
+    <footer className="footer"><a className="footer-brand" href="#top">hireflow<span>.</span></a><span>Built for the next step in your career.</span><span>React · Spring Boot · REST API</span></footer>
+    {selected && <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setSelected(null) }}><section className="job-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button className="modal-close" onClick={() => setSelected(null)} aria-label="Close">×</button><div className="company-logo modal-logo">{(selected.company || 'HF').split(/\s+/).map(p => p[0]).join('').slice(0,2).toUpperCase()}</div><span className="eyebrow">ROLE DETAILS</span><h2 id="modal-title">{selected.title}</h2><p className="company-name">{selected.company} · {selected.location}</p><div className="modal-facts"><span>{selected.type}</span><span>{selected.level || 'All levels'}</span>{selected.salary && <span>{selected.salary}</span>}</div><h3>About the role</h3><p className="modal-description">{selected.description || 'No detailed description has been provided.'}</p><h3>Skills</h3><div className="skill-list">{selected.skills.length ? selected.skills.map(s => <span key={s}>{s}</span>) : <span>Not specified</span>}</div><div className="modal-actions"><button className="secondary-button" onClick={() => toggleSaved(selected)}>{saved.includes(selected.id) ? '♥ Saved' : '♡ Save job'}</button><button className="apply-button" onClick={() => apply(selected)} disabled={applying === selected.id}>{applying === selected.id ? 'Sending…' : 'Quick apply'}</button></div><small className="demo-note">Quick apply calls the current demo endpoint; applications are not yet stored in the database.</small></section></div>}
+    {toast && <div className="toast" role="status">{toast}</div>}
+  </div>
 }
-
-export default App

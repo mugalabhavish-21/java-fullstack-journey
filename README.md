@@ -1,70 +1,50 @@
-# HireFlow — React + Spring Boot Job Board
+# HireFlow — Full-Stack Job Board
 
-A full-stack job board portfolio project with a Vite/React frontend and a Spring Boot REST API backed by JPA and H2.
+HireFlow is a React + Vite frontend connected to a Spring Boot REST API. This branch focuses on stabilizing the public job-discovery experience before adding persisted applications and authentication.
 
-## Features
-- React functional components and hooks (`useState`, `useEffect`, `useMemo`)
-- Live job loading from the Spring Boot REST API
-- Search across job title, company and skills
-- Location and employment-type filters
-- Save jobs with `localStorage` persistence
-- Apply flow connected to the backend API
-- Create a demo job through the REST API
-- Job details modal
-- Light/dark theme with persistence
-- Responsive CSS for desktop, tablet and mobile
+## Current functionality
+- Fetches jobs from the Spring Boot API (GET /api/jobs).
+- Searches jobs by keyword and filters by location and employment type.
+- Shows loading, empty, and API error states.
+- Sorts returned results by title or company.
+- Saves jobs locally in the browser using localStorage.
+- Opens a job details dialog and supports light/dark themes.
+- Calls the existing demo application endpoint. Applications are not yet persisted; the UI makes this limitation explicit.
+- Responsive layout for mobile, tablet and desktop.
 
-## Architecture
-- Frontend: React + Vite + JavaScript + CSS
-- Backend: Spring Boot + REST + Spring Data JPA
-- Database: H2 (in-memory demo database)
-- Frontend deployment: Vercel
-- Backend deployment: Railway
+## Tech stack
+- Frontend: React, Vite, JavaScript, CSS
+- Backend: Java 17, Spring Boot, Spring Web, Spring Data JPA, Bean Validation
+- Database: H2 in the current backend configuration
+- Deployment targets: Vercel (frontend) and Railway (backend)
 
-## Live URLs
-- Frontend: https://hireflow-react-interview.vercel.app
-- Backend API: https://java-fullstack-journey-production.up.railway.app/api/jobs
+## API
+The frontend defaults to https://java-fullstack-journey-production.up.railway.app/api. Override this with the VITE_API_BASE_URL environment variable; its value should end with /api.
 
-## API endpoints
-- `GET /api/jobs`
-- `GET /api/jobs/{id}`
-- `POST /api/jobs`
-- `PUT /api/jobs/{id}`
-- `DELETE /api/jobs/{id}`
-- `POST /api/jobs/{id}/apply`
+- GET /api/jobs?q=java&location=Hyderabad&type=Full%20Time
+- GET /api/jobs/{id}
+- POST /api/jobs
+- PUT /api/jobs/{id}
+- DELETE /api/jobs/{id}
+- POST /api/jobs/{id}/apply — currently acknowledges a demo request; it does not create a persistent application record.
 
-## Run frontend locally
-```bash
-npm install
-npm run dev
-```
+## Run locally
 
-## Run backend locally
-```bash
-cd backend
-mvn spring-boot:run
-```
+Frontend:
+    npm install
+    npm run dev
 
-**Author:** Bhavish Mugala
+Backend:
+    cd backend
+    mvn spring-boot:run
 
-## JavaScript Tic Tac Toe
+Set VITE_API_BASE_URL=http://localhost:8080/api in a local .env file to use the local backend.
 
-A browser-based Tic Tac Toe game built with HTML, CSS, and vanilla JavaScript. The complete project is in [`javascript-project`](javascript-project).
+## Roadmap
+1. Verify and stabilize deployed API integration.
+2. Persist applications with a JPA entity and repository.
+3. Add DTOs, global exception handling, pagination, and integration tests.
+4. Add authentication and candidate/recruiter authorization.
+5. Move production persistence from in-memory H2 to PostgreSQL.
 
-### Run locally
-
-Open [`javascript-project/index.html`](javascript-project/index.html) in a web browser. No build tools or dependencies are required.
-
-## React Redux Demo
-
-The repository also includes a React Redux cake and ice cream inventory demo. Its Redux store and feature modules are in [`src/redux`](src/redux), with reusable UI components in [`src/Components`](src/Components).
-
-Run the Vite application with:
-
-```bash
-npm install
-npm run dev
-```
-
-
-<!-- HireFlow production branch verified for interview readiness -->
+Author: Bhavish Mugala
