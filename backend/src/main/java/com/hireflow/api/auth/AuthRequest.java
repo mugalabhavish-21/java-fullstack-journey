@@ -1,2 +1,12 @@
 package com.hireflow.api.auth;
-public record AuthRequest(String email, String password, String role) {}
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+
+public record AuthRequest(
+        @NotBlank @Email @Size(max = 254) String email,
+        @NotBlank @Size(max = 72) String password,
+        @Pattern(regexp = "(?i)APPLICANT|RECRUITER") String role) {
+}

@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -20,7 +21,7 @@ class JobServiceTest {
 
     @Test
     void shouldSearchJobsWithPaginationAndFilters() {
-        Pageable pageable = PageRequest.of(0, 6);
+        Pageable pageable = PageRequest.of(0, 6, Sort.by(Sort.Direction.ASC, "title"));
         Job job = new Job("Java Developer", "HireFlow", "Hyderabad",
                 "Full Time", "Fresher", "₹4 LPA", "Java,Spring Boot", "Build REST APIs");
 

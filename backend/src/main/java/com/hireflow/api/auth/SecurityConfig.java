@@ -52,7 +52,7 @@ public class SecurityConfig {
                                         "Access denied")))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/api/jobs", "/api/jobs/*",
-                                "/api/jobs/stats").permitAll()
+                                "/api/jobs/stats", "/actuator/health", "/actuator/health/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
