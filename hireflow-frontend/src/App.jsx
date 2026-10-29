@@ -29,15 +29,16 @@ function Login({ onLogin }) {
   const [role, setRole] = useState('APPLICANT');
   const [mode, setMode] = useState('login');
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('applicant@hireflow.com');
-  const [password, setPassword] = useState('applicant123');
+  const showDemoCredentials = import.meta.env.DEV;
+  const [email, setEmail] = useState(showDemoCredentials ? 'applicant@hireflow.com' : '');
+  const [password, setPassword] = useState(showDemoCredentials ? 'applicant123' : '');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
   const chooseRole = (nextRole) => {
     setRole(nextRole);
-    setEmail(nextRole === 'APPLICANT' ? 'applicant@hireflow.com' : 'recruiter@hireflow.com');
-    setPassword(nextRole === 'APPLICANT' ? 'applicant123' : 'recruiter123');
+    setEmail(showDemoCredentials ? (nextRole === 'APPLICANT' ? 'applicant@hireflow.com' : 'recruiter@hireflow.com') : '');
+    setPassword(showDemoCredentials ? (nextRole === 'APPLICANT' ? 'applicant123' : 'recruiter123') : '');
     setMode('login');
     setError('');
   };
@@ -96,13 +97,13 @@ function Login({ onLogin }) {
           <form className="form-stack" onSubmit={submit}>
             {mode === 'register' && <label>Full name<input autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required /></label>}
             <label>Email address<input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required /></label>
-            <label>Password<input type="password" autoComplete={mode === 'register' ? 'new-password' : 'current-password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" minLength={mode === 'register' ? 8 : undefined} required /></label>
+            <label>Password<input type="password" autoComplete={mode === 'register' ? 'new-password' : 'current-password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" minLength={mode === 'register' ? 12 : undefined} maxLength={72} required /></label>
             {error && <div className="alert alert-error" role="alert">{error}</div>}
             <button className="button button-primary button-wide" disabled={busy}>{busy ? 'Please wait…' : mode === 'register' ? 'Create account' : 'Sign in'}</button>
           </form>
           {mode === 'login' ? (
             <>
-              <div className="demo-note"><b>Demo access</b><span>{role === 'APPLICANT' ? 'applicant@hireflow.com / applicant123' : 'recruiter@hireflow.com / recruiter123'}</span></div>
+              {showDemoCredentials && <div className="demo-note"><b>Local demo access</b><span>{role === 'APPLICANT' ? 'applicant@hireflow.com / applicant123' : 'recruiter@hireflow.com / recruiter123'}</span></div>}
               <p className="auth-switch">New to HireFlow? <button type="button" onClick={() => { setMode('register'); setRole('APPLICANT'); setEmail(''); setPassword(''); setError(''); }}>Create an applicant account</button></p>
             </>
           ) : (
@@ -406,6 +407,17 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem('hireflowUser')) || null; }
     catch { return null; }
   });
+
+  useEffect(() => {
+    const onSessionExpired = () => {
+      localStorage.removeItem('hireflowUser');
+      localStorage.removeItem('hireflowToken');
+      setUser(null);
+    };
+    window.addEventListener('hireflow:session-expired', onSessionExpired);
+    return () => window.removeEventListener('hireflow:session-expired', onSessionExpired);
+  }, []);
+
   const logout = () => {
     localStorage.removeItem('hireflowUser');
     localStorage.removeItem('hireflowToken');
