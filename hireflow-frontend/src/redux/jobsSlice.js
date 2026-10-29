@@ -9,6 +9,11 @@ const request = async (path, options = {}) => {
     headers: { 'Content-Type': 'application/json', ...auth(), ...(options.headers || {}) }
   });
   const body = await response.json().catch(() => null);
+  if (response.status === 401 && localStorage.getItem('hireflowToken')) {
+    localStorage.removeItem('hireflowToken');
+    localStorage.removeItem('hireflowUser');
+    window.dispatchEvent(new Event('hireflow:session-expired'));
+  }
   if (!response.ok) throw new Error(body?.message || body?.error || 'Request failed (' + response.status + ')');
   return body;
 };
