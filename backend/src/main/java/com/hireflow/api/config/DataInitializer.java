@@ -8,10 +8,19 @@ import com.hireflow.api.user.Role;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 public class DataInitializer {
+    @Value("${app.demo-users.enabled:true}")
+    private boolean demoUsersEnabled;
+
+    @Value("${app.bootstrap-recruiter.email:}")
+    private String bootstrapRecruiterEmail;
+
+    @Value("${app.bootstrap-recruiter.password:}")
+    private String bootstrapRecruiterPassword;
     @Bean
     CommandLineRunner seedDemoData(JobRepository jobs, AppUserRepository users, PasswordEncoder encoder) {
         return args -> {
@@ -24,7 +33,7 @@ public class DataInitializer {
                 jobs.save(new Job("Web Developer Intern", "BrightByte", "Hyderabad", "Internship", "Intern", "₹15k / month", "HTML,CSS,JavaScript", "Build and maintain responsive web pages."));
             }
 
-            if (users.findByEmailIgnoreCase("applicant@hireflow.com").isEmpty()) {
+            if (demoUsersEnabled && users.findByEmailIgnoreCase("applicant@hireflow.com").isEmpty()) {
                 AppUser applicant = new AppUser();
                 applicant.setEmail("applicant@hireflow.com");
                 applicant.setPassword(encoder.encode("applicant123"));
@@ -32,11 +41,26 @@ public class DataInitializer {
                 applicant.setRole(Role.APPLICANT);
                 users.save(applicant);
             }
-            if (users.findByEmailIgnoreCase("recruiter@hireflow.com").isEmpty()) {
+            if (demoUsersEnabled && users.findByEmailIgnoreCase("recruiter@hireflow.com").isEmpty()) {
                 AppUser recruiter = new AppUser();
                 recruiter.setEmail("recruiter@hireflow.com");
                 recruiter.setPassword(encoder.encode("recruiter123"));
                 recruiter.setName("Demo Recruiter");
+                recruiter.setRole(Role.RECRUITER);
+                users.save(recruiter);
+            }
+
+            // Production can bootstrap one trusted recruiter using environment variables.
+            // Remove INITIAL_RECRUITER_EMAIL and INITIAL_RECRUITER_PASSWORD after account creation.
+            if (!demoUsersEnabled && (bootstrapRecruiterEmail.isBlank() != bootstrapRecruiterPassword.isBlank())) {
+                throw new IllegalStateException("Set both INITIAL_RECRUITER_EMAIL and INITIAL_RECRUITER_PASSWORD, or neither");
+            }
+            if (!demoUsersEnabled && !bootstrapRecruiterEmail.isBlank()
+                    && users.findByEmailIgnoreCase(bootstrapRecruiterEmail.trim()).isEmpty()) {
+                AppUser recruiter = new AppUser();
+                recruiter.setEmail(bootstrapRecruiterEmail.trim().toLowerCase(java.util.Locale.ROOT));
+                recruiter.setPassword(encoder.encode(bootstrapRecruiterPassword));
+                recruiter.setName("Recruiter");
                 recruiter.setRole(Role.RECRUITER);
                 users.save(recruiter);
             }
