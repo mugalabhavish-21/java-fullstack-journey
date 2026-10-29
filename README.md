@@ -55,22 +55,22 @@ The frontend is hosted on Vercel and the backend API is hosted on Render with Po
 | Production database | PostgreSQL |
 | Local default database | H2 in-memory |
 | Frontend hosting | Vercel |
-| Backend hosting | Railway |
+| Backend hosting | Render |
 
 ## Demo accounts
 
-Use these seeded accounts to explore the demo:
+These credentials are for **local development only**. By default, local runs seed them; the production profile disables demo account creation.
 
 | Role | Email | Password |
 | --- | --- | --- |
 | Applicant | `applicant@hireflow.com` | `applicant123` |
 | Recruiter | `recruiter@hireflow.com` | `recruiter123` |
 
-These credentials are for demonstration only. Do not use them for sensitive or real-world accounts. Public registration creates applicant accounts; recruiter access should be restricted to trusted users in a real production system.
+Never use these accounts in a public production environment. Disabling seed creation does not remove demo users that were already inserted into a production database. Review and clean any existing demo rows before storing real user data. For safe recruiter bootstrap instructions, see [Production operations](docs/production-operations.md).
 
 ## API reference
 
-Base URL: `https://hireflow-api-production-b901.up.railway.app/api`
+Base URL: `https://hireflow-api-treb.onrender.com/api`
 
 ### Authentication
 | Method | Endpoint | Purpose |
@@ -114,6 +114,20 @@ The job list supports `q`, `location`, `type`, `page`, `size`, `sortBy`, and `di
 | PATCH | `/notifications/{id}/read` | Authenticated user | Mark one owned notification as read |
 
 Protected endpoints expect an `Authorization: Bearer <token>` header. Endpoint access is enforced by Spring Security and method-level role checks.
+
+## Production readiness and monitoring
+
+The Render Blueprint uses `/actuator/health/readiness` for deployment health checks. Only the minimal health status is exposed; health components and connection details are hidden. The readiness group checks PostgreSQL as well as application readiness.
+
+Operational runbook: [docs/production-operations.md](docs/production-operations.md). It covers UptimeRobot setup, Render/Vercel logs, health-check triage, environment variables, demo-account cleanup, and release verification.
+
+Recommended monitoring:
+- Render service events, logs, metrics, and deployment status.
+- Vercel deployment/build logs and runtime observability.
+- UptimeRobot or an equivalent external HTTPS check every 5 minutes for both the frontend and `/actuator/health/readiness`.
+- GitHub Actions CI for the frontend production build and Maven tests.
+
+The included Render Blueprint uses free-tier resources. Free web services may sleep, and free databases may have time limits; do not use an expiring free database for valuable production data. Plan a durable PostgreSQL service and backups before a real launch.
 
 ## Run locally
 
