@@ -45,7 +45,7 @@ export default function App() {
     return () => { window.clearTimeout(timer); controller.abort() }
   }, [query, location, type])
 
-  const locations = useMemo(() => ['All locations', ...new Set(jobs.map(j => j.location).filter(Boolean).sort())], [jobs])
+  const locations = ['All locations', 'Hyderabad', 'Bengaluru', 'Pune', 'Remote', 'Chennai', 'Mumbai']
   const visible = useMemo(() => {
     const list = savedOnly ? jobs.filter(j => saved.includes(j.id)) : [...jobs]
     if (sort === 'title') list.sort((a,b) => a.title.localeCompare(b.title))
