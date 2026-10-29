@@ -16,6 +16,9 @@ public class DataInitializer {
     @Value("${app.demo-users.enabled:true}")
     private boolean demoUsersEnabled;
 
+    @Value("${app.demo-jobs.enabled:true}")
+    private boolean demoJobsEnabled;
+
     @Value("${app.bootstrap-recruiter.email:}")
     private String bootstrapRecruiterEmail;
 
@@ -24,7 +27,7 @@ public class DataInitializer {
     @Bean
     CommandLineRunner seedDemoData(JobRepository jobs, AppUserRepository users, PasswordEncoder encoder) {
         return args -> {
-            if (jobs.count() == 0) {
+            if (demoJobsEnabled && jobs.count() == 0) {
                 jobs.save(new Job("React Frontend Developer", "Nova Labs", "Hyderabad", "Full Time", "Fresher", "₹4.5–6 LPA", "React,JavaScript,REST API", "Build responsive interfaces and reusable React components."));
                 jobs.save(new Job("Full Stack Developer", "Helical IT Solutions", "Hyderabad", "Full Time", "Fresher", "₹3.5 LPA", "HTML,CSS,React,Spring Boot", "Work on modern web applications and REST APIs."));
                 jobs.save(new Job("Java Developer Intern", "CodeCraft Systems", "Bengaluru", "Internship", "Intern", "₹20k / month", "Java,Spring Boot,SQL", "Develop REST services and integrate frontend applications."));
