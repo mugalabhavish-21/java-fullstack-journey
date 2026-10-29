@@ -4,11 +4,13 @@ import com.hireflow.api.user.AppUser;
 import com.hireflow.api.user.AppUserRepository;
 import com.hireflow.api.user.Role;
 import jakarta.validation.Valid;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Locale;
 import java.util.Map;
 
 @RestController
@@ -26,25 +28,41 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody AppUser user) {
-        if (users.findByEmailIgnoreCase(user.getEmail()).isPresent()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "Email already registered"));
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+        String email = request.email().trim().toLowerCase(Locale.ROOT);
+        if (users.findByEmailIgnoreCase(email).isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("message", "Email already registered"));
         }
-        user.setEmail(user.getEmail().trim().toLowerCase());
-        user.setPassword(encoder.encode(user.getPassword()));
+
+        AppUser user = new AppUser();
+        user.setEmail(email);
+        user.setName(request.name().trim());
+        user.setPassword(encoder.encode(request.password()));
         // Public self-registration must never grant recruiter privileges.
         user.setRole(Role.APPLICANT);
-        users.save(user);
+
+        try {
+            users.saveAndFlush(user);
+        } catch (DataIntegrityViolationException ex) {
+            // Handles the race where two registrations pass the prior existence check.
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("message", "Email already registered"));
+        }
         return loginInternal(user);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
-        String email = body.getOrDefault("email", "").trim();
-        String password = body.getOrDefault("password", "");
-        Role requestedRole;
+    public ResponseEntity<?> login(@Valid @RequestBody AuthRequest request) {
+        String email = request.email().trim().toLowerCase(Locale.ROOT);
+        String password = request.password();
+        String roleValue = request.role() == null || request.role().isBlank()
+                ? "APPLICANT"
+                : request.role().toUpperCase(Locale.ROOT);
+
+        final Role requestedRole;
         try {
-            requestedRole = Role.valueOf(body.getOrDefault("role", "APPLICANT").toUpperCase());
+            requestedRole = Role.valueOf(roleValue);
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Invalid credentials for selected role"));
