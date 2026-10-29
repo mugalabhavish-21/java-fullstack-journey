@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchJobs, fetchStats, applyJob, fetchMyApplications, fetchApplications,
@@ -162,7 +162,7 @@ function Applicant({ user, onLogout }) {
   const [flashMessage, setFlashMessage] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
 
-  const jobs = page?.content || [];
+  const jobs = useMemo(() => page?.content || [], [page?.content]);
   const unread = notifications.filter((item) => !item.readFlag).length;
 
   useEffect(() => {
@@ -277,6 +277,11 @@ function Recruiter({ user, onLogout }) {
   const [editingId, setEditingId] = useState(null);
   const [scheduleTarget, setScheduleTarget] = useState(null);
   const [interviewForm, setInterviewForm] = useState({ scheduledAt: '', type: 'Technical', meetingLink: '' });
+  const [minimumInterviewTime] = useState(() => {
+    const date = new Date(Date.now() + 60000);
+    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+    return date.toISOString().slice(0, 16);
+  });
   const [form, setForm] = useState({ title: '', company: '', location: 'Hyderabad', type: 'Full Time', level: 'Fresher', salary: '', skills: '', description: '' });
 
   const jobs = page?.content || [];
@@ -397,7 +402,7 @@ function Recruiter({ user, onLogout }) {
         {tab === 'notifications' && <section className="panel"><div className="section-heading"><div><span className="eyebrow">STAY IN THE LOOP</span><h2>Notifications</h2></div><span className="metric-pill">{unread} unread</span></div><NotificationPanel notifications={notifications} dispatch={dispatch} flash={setFlashMessage} /></section>}
         {error && <div className="alert alert-error">{error}</div>}
       </main>
-      {scheduleTarget && <div className="modal-backdrop" role="presentation" onClick={(e) => { if (e.target === e.currentTarget) setScheduleTarget(null); }}><section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="schedule-title"><button className="modal-close" onClick={() => setScheduleTarget(null)} aria-label="Close">×</button><span className="eyebrow">INTERVIEW SCHEDULING</span><h2 id="schedule-title">Schedule an interview</h2><p className="muted">Candidate: {scheduleTarget.candidateEmail}</p><form className="form-stack" onSubmit={submitInterview}><label>Date and time<input type="datetime-local" required value={interviewForm.scheduledAt} min={(() => { const d = new Date(Date.now() + 60000); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); })()} onChange={(e) => setInterviewForm({ ...interviewForm, scheduledAt: e.target.value })} /></label><label>Interview type<select value={interviewForm.type} onChange={(e) => setInterviewForm({ ...interviewForm, type: e.target.value })}><option>Technical</option><option>HR</option><option>Managerial</option><option>Screening</option></select></label><label>Meeting link (optional)<input type="url" value={interviewForm.meetingLink} onChange={(e) => setInterviewForm({ ...interviewForm, meetingLink: e.target.value })} placeholder="https://meet.google.com/..." /></label><div className="form-actions"><button type="button" className="button button-ghost" onClick={() => setScheduleTarget(null)}>Cancel</button><button className="button button-primary">Schedule and notify</button></div></form></section></div>}
+      {scheduleTarget && <div className="modal-backdrop" role="presentation" onClick={(e) => { if (e.target === e.currentTarget) setScheduleTarget(null); }}><section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="schedule-title"><button className="modal-close" onClick={() => setScheduleTarget(null)} aria-label="Close">×</button><span className="eyebrow">INTERVIEW SCHEDULING</span><h2 id="schedule-title">Schedule an interview</h2><p className="muted">Candidate: {scheduleTarget.candidateEmail}</p><form className="form-stack" onSubmit={submitInterview}><label>Date and time<input type="datetime-local" required value={interviewForm.scheduledAt} min={minimumInterviewTime} onChange={(e) => setInterviewForm({ ...interviewForm, scheduledAt: e.target.value })} /></label><label>Interview type<select value={interviewForm.type} onChange={(e) => setInterviewForm({ ...interviewForm, type: e.target.value })}><option>Technical</option><option>HR</option><option>Managerial</option><option>Screening</option></select></label><label>Meeting link (optional)<input type="url" value={interviewForm.meetingLink} onChange={(e) => setInterviewForm({ ...interviewForm, meetingLink: e.target.value })} placeholder="https://meet.google.com/..." /></label><div className="form-actions"><button type="button" className="button button-ghost" onClick={() => setScheduleTarget(null)}>Cancel</button><button className="button button-primary">Schedule and notify</button></div></form></section></div>}
     </>
   );
 }
